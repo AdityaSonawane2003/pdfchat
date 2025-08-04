@@ -15,8 +15,6 @@ from langchain_community.embeddings import OllamaEmbeddings
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-
-# === GUARDRAILS SETUP ===
 from guardrails import Guard
 from guardrails.hub import (
     PolitenessCheck, ResponsivenessCheck, LlmRagEvaluator,
@@ -33,7 +31,7 @@ except ImportError:
     SENTENCE_TRANSFORMER_AVAILABLE = False
     st.warning("⚠️ sentence-transformers not installed. ProvenanceLLM guardrail will be disabled.")
 
-# === CHROMADB IMPORTS ===
+# CHROMADB IMPORTS
 try:
     import chromadb
     from chromadb.config import Settings
@@ -107,7 +105,11 @@ def run_guardrails(selected_guards, answer, question, rag_context, source_conten
                     llm_callable=f"ollama_chat/{GUARDIAN_MODEL}",
                     on_fail="exception"
                 )
-                guard.validate(answer)
+                guard.validate(answer, metadata={
+                    "temperature": 0,
+                    "max_tokens": 1
+
+                })
 
             elif guard_type == "Responsiveness":
                 guard = Guard().use(
@@ -186,7 +188,7 @@ def run_guardrails(selected_guards, answer, question, rag_context, source_conten
                     metadata={"temperature": 0.7, "max_tokens": 100}
                 )
 
-            # === ENHANCED GUARDRAILS ===
+            
             elif guard_type == "Provenance Check":
                 if SENTENCE_TRANSFORMER_AVAILABLE and source_content:
                     guard = Guard().use(
